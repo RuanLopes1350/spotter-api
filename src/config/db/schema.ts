@@ -4,6 +4,7 @@ import { sql, relations } from 'drizzle-orm';
 export const sexoEnum = pgEnum('sexo', ['M', 'F']);
 export const tipoAtivacaoEnum = pgEnum('tipo_ativacao', ['PRIMARIO', 'SECUNDARIO']);
 export const turnoEnum = pgEnum('turno', ['MANHA', 'TARDE', 'NOITE']);
+export const grupoMuscularEnum = pgEnum('grupo_muscular', ['PEITO', 'COSTAS', 'PERNAS', 'BRAÇOS', 'OMBROS', 'ABDOMEN']);
 
 export const academia = pgTable('academia', {
     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
@@ -57,7 +58,7 @@ export const treinador = pgTable('treinador', {
 export const musculo = pgTable('musculo', {
     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
     nome: varchar('nome', { length: 255 }).notNull(),
-    grupo_muscular: varchar('grupo_muscular', { length: 255 }).notNull(),
+    grupo_muscular: grupoMuscularEnum('grupo_muscular').notNull(),
 });
 
 export const aparelho = pgTable('aparelho', {

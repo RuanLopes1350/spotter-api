@@ -8,6 +8,8 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL!,
 });
 
+const DbURL = process.env.DATABASE_URL
+
 export let DataBase = drizzle(pool, { schema });
 
 export class DbConnect {
@@ -15,9 +17,10 @@ export class DbConnect {
         try {
             const client = await pool.connect();
             client.release();
-            console.log(chalk.yellowBright(`Status do banco de dados: ${chalk.greenBright('Conectado com sucesso!')}`));
+            console.log(chalk.yellowBright(`STATUS DO BANCO DE DADOS... \n${chalk.greenBright('Conectado com sucesso!')}`));
+            console.log(chalk.blueBright(`BANCO DE DADOS RODANDO EM: \n${chalk.greenBright(DbURL)}`))
         } catch (error) {
-            console.error(chalk.yellowBright(`Status do banco de dados: ${chalk.redBright('Falha na conexão!')}`));
+            console.error(chalk.yellowBright(`STATUS DO BANCO DE DADOS: ${chalk.redBright('Falha na conexão!')}`));
             process.exit(1);
         }
     }
