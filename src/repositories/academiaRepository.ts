@@ -13,7 +13,7 @@ class AcademiaRepository {
         try {
             const resposta = await this.db.insert(academia).values(novaAcademia).returning();
             return resposta[0]
-        } catch (error) { 
+        } catch (error) {
             throw new Error(`Erro ao criar academia: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
         }
     }
@@ -36,6 +36,14 @@ class AcademiaRepository {
         }
     }
 
+    async updateAcademia(id: number, academiaEditada: Partial<type_academia>): Promise<Partial<type_academia>> {
+        try {
+            const resposta = await this.db.update(academia).set(academiaEditada).where(eq(academia.id, id)).returning();
+            return resposta[0];
+        } catch (error) {
+            throw new Error(`Erro ao atualizar academia: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+        }
+    }
 }
 
 export default AcademiaRepository;

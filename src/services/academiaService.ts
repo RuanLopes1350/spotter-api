@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 import AcademiaRepository from "../repositories/academiaRepository";
 import { type_academia } from "../types/dbSchemas";
-import { academiaSchema } from "../utils/validations/academiaValidation";
+import { academiaSchema, academiaUpdateSchema } from "../utils/validations/academiaValidation";
 
 class AcademiaService {
     private repository: AcademiaRepository;
@@ -43,6 +43,20 @@ class AcademiaService {
             return academia;
         } catch (error) {
             throw new Error(`Erro ao buscar academia: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+        }
+    }
+
+    async updateAcademia(id: number, academiaEditada: Partial<type_academia>): Promise<Partial<type_academia>> {
+        try { 
+            academiaUpdateSchema.parse(academiaEditada)
+            const academiaAtualizada = await this.repository.updateAcademia(id, academiaEditada)
+            return academiaAtualizada
+        } catch (error) { 
+            if (error instanceof ZodError) {
+                throw error;
+            }
+
+            throw new Error(`Erro ao criar academia: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
         }
     }
 }

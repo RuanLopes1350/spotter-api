@@ -8,5 +8,6 @@ router
     .post('/academia', academiaController.createAcademia)
     .get('/academia', academiaController.getAllAcademia)
     .get('/academia/:id', academiaController.getAcademiaById)
+    .patch('/academia/:id', academiaController.updateAcademia)
 
 export default router;
