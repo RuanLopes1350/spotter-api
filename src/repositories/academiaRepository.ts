@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { DataBase } from "../config/DbConnect";
 import { academia } from "../config/db/schema";
 import { type_academia } from "../types/dbSchemas"
+import { parseDatabaseError } from "../utils/errors/DatabaseError";
 
 class AcademiaRepository {
     private db: typeof DataBase;
@@ -14,7 +15,7 @@ class AcademiaRepository {
             const resposta = await this.db.insert(academia).values(novaAcademia).returning();
             return resposta[0]
         } catch (error) {
-            throw new Error(`Erro ao criar academia: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+            throw parseDatabaseError(error, 'AlunoRepository.createAluno');
         }
     }
 

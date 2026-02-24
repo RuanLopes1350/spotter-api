@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import CommonResponse from "../utils/helpers/commonResponse";
 import { ZodError } from "zod";
 import HttpStatusCode from "../utils/helpers/httpStatusCode";
+import { DatabaseError } from "../utils/errors/DatabaseError";
 
 class AcademiaController {
     private service: AcademiaService;
@@ -30,9 +31,16 @@ class AcademiaController {
             return CommonResponse.created(res, resposta, HttpStatusCode.CREATED.message);
         } catch (error) {
             if (error instanceof ZodError) {
+                console.warn('[AcademiaController] [createAcademia] Erro de validação Zod:', error.issues);
                 return CommonResponse.error(res, HttpStatusCode.UNPROCESSABLE_ENTITY.code, null, null, error.issues, HttpStatusCode.UNPROCESSABLE_ENTITY.message);
             }
-            return CommonResponse.serverError(res, error, HttpStatusCode.INTERNAL_SERVER_ERROR.message);
+            if (error instanceof DatabaseError) {
+                console.warn('[AcademiaController] [createAcademia] DatabaseError:', error.message);
+                return CommonResponse.error(res, error.statusCode, null, null, [error.toJSON()], error.message);
+            }
+            const msg = error instanceof Error ? error.message : 'Erro desconhecido';
+            console.error('[AcademiaController] [createAcademia] Erro interno:', msg);
+            return CommonResponse.serverError(res, { message: msg }, HttpStatusCode.INTERNAL_SERVER_ERROR.message);
         }
     }
 

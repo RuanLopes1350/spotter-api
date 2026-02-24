@@ -6,6 +6,7 @@ import { DbConnect } from './config/DbConnect';
 
 // importação das rotas
 import academiaRoutes from './routes/academiaRoutes';
+import alunoRoutes from './routes/alunoRoutes';
 
 dotenv.config();
 
@@ -15,12 +16,14 @@ const PORT = process.env.PORT || 1350;
 app.use(cors());
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
+// Rota Health Check
+app.get('/api', (req, res) => {
+  res.send(`API de Controle de Atividades Físicas está funcionando! \nTempo de Uptime: ${process.uptime().toFixed(2)} segundos`);
 });
 
 // rotas
 app.use('/api', academiaRoutes);
+app.use('/api', alunoRoutes);
 
 //função para iniciar o servidor
 async function startServer() {

@@ -1,6 +1,7 @@
 import { enum_sexo, enum_turnos } from "./enum";
 
 export type type_academia = {
+    id?: number;
     nome: string;
     endereco_numero: string;
     endereco_rua: string;
@@ -11,20 +12,20 @@ export type type_academia = {
 }
 
 export type type_aluno = {
-    id: number;
-    url_foto: string;
+    id?: number;
+    url_foto?: string | null;
     nome: string;
     email: string;
     senha: string;
-    data_nascimento: Date;
+    data_nascimento: string;
     sexo: enum_sexo;
     status_conta: boolean;
-    created_at: Date;
+    created_at?: Date;
     academia_id: number;
 }
 
 export type type_avaliacao_fisica = {
-    id: number;
+    id?: number;
     data_avaliacao: Date;
     peso_kg: number;
     altura_m: number;
@@ -32,12 +33,12 @@ export type type_avaliacao_fisica = {
 }
 
 export type type_treinador = {
-    id: number;
+    id?: number;
     url_foto: string;
     nome: string;
     email: string;
     senha: string;
-    data_nascimento: Date;
+    data_nascimento: string;
     sexo: enum_sexo;
     cref: string;
     turno: enum_turnos;
@@ -51,19 +52,19 @@ export type type_treinador = {
 export type type_grupo_muscular = 'PEITO' | 'COSTAS' | 'PERNAS' | 'BRAÇOS' | 'OMBROS' | 'ABDOMEN';
 
 export type type_musculo = {
-    id: number;
+    id?: number;
     nome: string;
     grupo_muscular: type_grupo_muscular;
 }
 
 export type type_aparelho = {
-    id: number;
+    id?: number;
     nome: string;
     descricao: string;
 }
 
 export type type_exercicio = {
-    id: number;
+    id?: number;
     nome: string;
     descricao: string;
 }
@@ -82,7 +83,7 @@ export type type_exercicio_aparelho = {
 }
 
 export type type_rotina_treino = {
-    id: number;
+    id?: number;
     nome: string;
     data_criacao: Date;
     usuario_id: number;
@@ -90,7 +91,7 @@ export type type_rotina_treino = {
 }
 
 export type type_item_rotina = {
-    id: number;
+    id?: number;
     series: number;
     repeticoes: number;
     carga_sugerida: number;

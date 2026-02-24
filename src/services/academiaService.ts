@@ -17,9 +17,12 @@ class AcademiaService {
             return academiaCriada;
         } catch (error) {
             if (error instanceof ZodError) {
+                console.warn('[AlunoService] [createAluno] Falha na validação Zod:', error.issues);
                 throw error;
             }
-            throw new Error(`Erro ao criar academia: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+            // Repropaga DatabaseError e qualquer outro erro sem re-envolver
+            console.warn('[AcademiaService] [createAcademia] Erro recebido do repository, propagando...');
+            throw error;
         }
     }
 
