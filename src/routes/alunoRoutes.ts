@@ -5,7 +5,7 @@ const router = express.Router();
 const alunoController = new AlunoController();
 
 router
-    .post('/aluno', alunoController.createAluno)
-    // .get('/aluno', alunoController.getAllAlunos)
+    .get('/alunos', alunoController.getAllStudents)
+    .get('/alunos/:id', alunoController.getStudentById)
 
 export default router
