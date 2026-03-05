@@ -22,6 +22,37 @@ class AlunoRepository {
             throw parseDatabaseError(error, 'AlunoRepository.createAluno');
         }
     }
+
+    async getAllStudents(): Promise<type_aluno[]> {
+            try {
+                const resultado = await this.db
+                    .select()
+                    .from(aluno);
+    
+                return resultado as unknown as type_aluno[];
+            } catch (error) {
+                throw parseDatabaseError(error, 'AlunoRepository.getAllStudents');
+            }
+        }
+
+    async findById(id: number): Promise<type_aluno | null> {
+        try {
+            const resultado = await this.db
+                .select()
+                .from(aluno)
+                .where(eq(aluno.id, id))
+                .limit(1);
+
+            if (resultado.length === 0) {
+                return null;
+            }
+
+            return resultado[0] as unknown as type_aluno;
+        } catch (error) {
+            throw parseDatabaseError(error, 'AlunoRepository.findById');
+        }
+    }
+
 }
 
 export default AlunoRepository
