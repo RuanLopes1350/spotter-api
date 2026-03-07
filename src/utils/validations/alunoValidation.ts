@@ -14,7 +14,14 @@ const studentSchema = z.object({
         .min(1, { message: "A senha é obrigatória" }),
     data_nascimento: z
         .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Data de nascimento deve estar no formato YYYY-MM-DD" }),
+        .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Data de nascimento deve estar no formato YYYY-MM-DD" })
+        .refine((date) => {
+            const [year, month, day] = date.split('-').map(Number);
+            const parsedDate = new Date(year, month - 1, day);
+            return parsedDate.getFullYear() === year && 
+                   parsedDate.getMonth() === month - 1 && 
+                   parsedDate.getDate() === day;
+        }, { message: "Data de nascimento inválida" }),
     sexo: z
         .enum(["M", "F"], { message: "Sexo deve ser 'M' para 'Masculino' ou 'F' para 'Feminino'" }),
     url_foto: z
