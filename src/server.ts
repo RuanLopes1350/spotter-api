@@ -7,6 +7,7 @@ import { DbConnect } from './config/DbConnect';
 // importação das rotas
 import academiaRoutes from './routes/academiaRoutes';
 import alunoRoutes from './routes/alunoRoutes';
+import exercicioRoutes from './routes/exercicioRoutes';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.get('/api', (req, res) => {
 // rotas
 app.use('/api', academiaRoutes);
 app.use('/api', alunoRoutes);
+app.use('/api', exercicioRoutes);
 
 //função para iniciar o servidor
 async function startServer() {
