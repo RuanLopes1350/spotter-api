@@ -3,6 +3,7 @@ import { type_exercicio } from "../types/dbSchemas";
 import { ZodError } from "zod";
 import {
     exercicioSchema,
+    exercicioUpdateSchema,
     exercicioQuerySchema,
     exercicioIdSchema,
 } from "../utils/validations/exercicioValidation";
@@ -104,6 +105,50 @@ class ExercicioService {
         }
     }
 
+    async updateExercicio(idParam: string, body: any): Promise<type_exercicio> {
+        try {
+            const id = exercicioIdSchema.parse(idParam);
+            const dadosValidados = exercicioUpdateSchema.parse(body);
+
+            // Verificar se exercício existe
+            const exercicioExistente = await this.repository.getExercicioById(id);
+
+            if (!exercicioExistente) {
+                throw new Error('Exercício não encontrado');
+            }
+
+            // TODO: [AUTH] Implementar verificação de permissão por perfil:
+            // - ADMIN: pode editar qualquer exercício (global ou pessoal)
+            // - INSTRUTOR/ALUNO: só pode editar exercícios pessoais onde aluno_id === usuarioLogadoId
+
+            if (dadosValidados.nome && dadosValidados.nome !== exercicioExistente.nome) {
+                const duplicado = await this.repository.findByNome(
+                    dadosValidados.nome,
+                    exercicioExistente.aluno_id,
+                );
+
+                if (duplicado) {
+                    throw new Error('Já existe um exercício com este nome');
+                }
+            }
+
+            const { musculos, ...camposExercicio } = dadosValidados;
+            const dadosParaAtualizar: Partial<type_exercicio> = {};
+            if (camposExercicio.nome !== undefined) dadosParaAtualizar.nome = camposExercicio.nome;
+            if (camposExercicio.descricao !== undefined) dadosParaAtualizar.descricao = camposExercicio.descricao;
+
+            await this.repository.updateExercicio(id, dadosParaAtualizar, musculos);
+
+            return await this.repository.getExercicioById(id) as type_exercicio;
+        } catch (error) {
+            if (error instanceof ZodError) {
+                console.warn('[ExercicioService] [updateExercicio] Falha na validação Zod:', error.issues);
+            } else {
+                console.warn('[ExercicioService] [updateExercicio] Erro recebido, propagando...');
+            }
+            throw error;
+        }
+    }
 }
 
 export default ExercicioService;

@@ -180,6 +180,54 @@ class ExercicioRepository {
         }
     }
 
+    async updateExercicio(
+        id: string,
+        dadosAtualizados: Partial<type_exercicio>,
+        musculos?: { musculo_id: string; tipo_ativacao: 'PRIMARIO' | 'SECUNDARIO' }[],
+    ): Promise<type_exercicio> {
+        try {
+            const resultado = await this.db.transaction(async (tx) => {
+                let exercicioAtualizado;
+
+                if (Object.keys(dadosAtualizados).length > 0) {
+                    const [atualizado] = await tx
+                        .update(exercicio)
+                        .set(dadosAtualizados)
+                        .where(and(eq(exercicio.id, id), isNull(exercicio.deletado_em)))
+                        .returning();
+                    exercicioAtualizado = atualizado;
+                } else {
+                    const [existente] = await tx
+                        .select()
+                        .from(exercicio)
+                        .where(and(eq(exercicio.id, id), isNull(exercicio.deletado_em)));
+                    exercicioAtualizado = existente;
+                }
+
+                if (musculos) {
+                    await tx
+                        .delete(exercicio_musculo)
+                        .where(eq(exercicio_musculo.exercicio_id, id));
+
+                    if (musculos.length > 0) {
+                        await tx.insert(exercicio_musculo).values(
+                            musculos.map((m) => ({
+                                exercicio_id: id,
+                                musculo_id: m.musculo_id,
+                                tipo_ativacao: m.tipo_ativacao,
+                            })),
+                        );
+                    }
+                }
+
+                return exercicioAtualizado;
+            });
+            return resultado;
+        } catch (error) {
+            throw parseDatabaseError(error, 'ExercicioRepository.updateExercicio');
+        }
+    }
+
     async findByNome(nome: string, alunoId?: string | null): Promise<type_exercicio | null> {
         try {
             const condicoes = alunoId
