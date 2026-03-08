@@ -14,5 +14,6 @@ const exercicioController = new ExercicioController();
 router.post('/exercicios', exercicioController.createExercicio);
 router.get('/exercicios', exercicioController.listarExercicios);
 router.get('/exercicios/:id', exercicioController.getExercicioById);
+router.patch('/exercicios/:id', exercicioController.updateExercicio);
 
 export default router;
