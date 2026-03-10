@@ -13,10 +13,9 @@ export type type_academia = {
 
 export type type_aluno = {
     id?: number;
+    user_id: string;
     url_foto?: string | null;
     nome: string;
-    email: string;
-    senha: string;
     data_nascimento: string;
     sexo: enum_sexo;
     status_conta: boolean;
@@ -34,10 +33,9 @@ export type type_avaliacao_fisica = {
 
 export type type_treinador = {
     id?: number;
+    user_id: string;
     url_foto: string;
     nome: string;
-    email: string;
-    senha: string;
     data_nascimento: string;
     sexo: enum_sexo;
     cref: string;

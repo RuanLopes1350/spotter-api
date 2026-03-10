@@ -10,7 +10,7 @@ const pool = new Pool({
 
 const DbURL = process.env.DATABASE_URL
 
-export let DataBase = drizzle(pool, { schema });
+export const DataBase = drizzle(pool, { schema });
 
 export class DbConnect {
     static async connect(): Promise<void> {

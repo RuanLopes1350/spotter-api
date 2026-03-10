@@ -2,10 +2,9 @@ import { enum_sexo } from "./enum";
 
 export type type_user = {
     id?: number;
+    user_id: string;
     url_foto?: string | null;
     nome: string;
-    email: string;
-    senha?: string;
     data_nascimento: string;
     sexo: enum_sexo;
     status_conta: boolean;

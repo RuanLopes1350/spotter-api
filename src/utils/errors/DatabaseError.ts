@@ -46,13 +46,10 @@ export class DatabaseError extends Error {
     }
 }
 
-/**
- * Converte qualquer erro do Drizzle/pg em DatabaseError com mensagem amigável.
- *
- * Com drizzle-orm/node-postgres + Pool do `pg`, o Drizzle envolve o erro
- * original em um DrizzleError — o erro real do PostgreSQL fica em error.cause.
- * Por isso verificamos tanto o próprio erro quanto error.cause.
- */
+// Converte qualquer erro do Drizzle/pg em DatabaseError com mensagem amigável.
+// Com drizzle-orm/node-postgres + Pool do pg, o Drizzle envolve o erro
+// original em um DrizzleError — o erro real do PostgreSQL fica em error.cause.
+// Por isso verificamos tanto o próprio erro quanto error.cause.
 export function parseDatabaseError(error: unknown, context: string): DatabaseError {
     // Drizzle/node-postgres: erro pg pode estar diretamente ou em .cause
     const candidates = [error, (error as any)?.cause];
