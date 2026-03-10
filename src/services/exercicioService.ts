@@ -7,21 +7,7 @@ import {
     exercicioQuerySchema,
     exercicioIdSchema,
 } from "../utils/validations/exercicioValidation";
-
-// Tipos auxiliares
-interface FiltrosExercicio {
-    nome?: string;
-    grupo_muscular?: string;
-    aluno_id?: string;
-}
-
-interface ResultadoPaginado {
-    dados: type_exercicio[];
-    total: number;
-    page: number;
-    limite: number;
-    totalPages: number;
-}
+import { FiltrosExercicio, ResultadoPaginadoExercicio } from "../types/filters";
 
 class ExercicioService {
     private repository: ExercicioRepository;
@@ -33,6 +19,26 @@ class ExercicioService {
     async createExercicio(body: any): Promise<type_exercicio> {
         try {
             const dadosValidados = exercicioSchema.parse(body);
+
+            // TODO: [AUTH] Apenas ADMIN pode criar exercícios globais (aluno_id = null).
+            // Quando auth estiver implementado, verificar: se usuário não for ADMIN e
+            // aluno_id for null, rejeitar com 403.
+
+            if (dadosValidados.aluno_id) {
+                const alunoExiste = await this.repository.verificarAlunoExiste(dadosValidados.aluno_id);
+                if (!alunoExiste) {
+                    throw new Error('Aluno não encontrado');
+                }
+            }
+
+            const verificacaoMusculos = await this.repository.verificarMusculosExistem(
+                dadosValidados.musculos.map((m) => m.musculo_id),
+            );
+            if (!verificacaoMusculos.validos) {
+                throw new Error(
+                    `Músculo(s) não encontrado(s): ${verificacaoMusculos.inexistentes.join(', ')}`,
+                );
+            }
 
             // Verificar duplicidade de nome na base global OU na base privada do aluno
             const exercicioExistente = await this.repository.findByNome(
@@ -56,40 +62,44 @@ class ExercicioService {
             );
 
             // Retorna o exercício com músculos associados
-            return await this.repository.getExercicioById(exercicioCriado.id!) as type_exercicio;
+            return await this.repository.getByIdExercicio(exercicioCriado.id!) as type_exercicio;
         } catch (error) {
             if (error instanceof ZodError) {
+                // TODO: [LOGGER] Substituir por logger centralizado ao implementar auth
                 console.warn('[ExercicioService] [createExercicio] Falha na validação Zod:', error.issues);
             } else {
+                // TODO: [LOGGER] Substituir por logger centralizado ao implementar auth
                 console.warn('[ExercicioService] [createExercicio] Erro recebido, propagando...');
             }
             throw error;
         }
     }
 
-    async listarExercicios(query: any): Promise<ResultadoPaginado> {
+    async getAllExercicios(query: any): Promise<ResultadoPaginadoExercicio> {
         try {
-            const { page, limite, nome, grupo_muscular, aluno_id } = exercicioQuerySchema.parse(query);
+            const { page, limite, nome, grupo_muscular, tipo_ativacao, aluno_id } = exercicioQuerySchema.parse(query);
 
             const filtros: FiltrosExercicio = {};
             if (nome) filtros.nome = nome;
             if (grupo_muscular) filtros.grupo_muscular = grupo_muscular;
+            if (tipo_ativacao) filtros.tipo_ativacao = tipo_ativacao;
             if (aluno_id) filtros.aluno_id = aluno_id;
 
-            return await this.repository.listarExercicios(filtros, page, limite);
+            return await this.repository.getAllExercicios(filtros, page, limite);
         } catch (error) {
             if (error instanceof ZodError) {
-                console.warn('[ExercicioService] [listarExercicios] Falha na validação Zod:', error.issues);
+                // TODO: [LOGGER] Substituir por logger centralizado ao implementar auth
+                console.warn('[ExercicioService] [getAllExercicios] Falha na validação Zod:', error.issues);
             }
             throw error;
         }
     }
 
-    async getExercicioById(idParam: string): Promise<type_exercicio> {
+    async getByIdExercicio(idParam: string): Promise<type_exercicio> {
         const id = exercicioIdSchema.parse(idParam);
 
         try {
-            const exercicioEncontrado = await this.repository.getExercicioById(id);
+            const exercicioEncontrado = await this.repository.getByIdExercicio(id);
 
             if (!exercicioEncontrado) {
                 throw new Error('Exercício não encontrado');
@@ -110,8 +120,7 @@ class ExercicioService {
             const id = exercicioIdSchema.parse(idParam);
             const dadosValidados = exercicioUpdateSchema.parse(body);
 
-            // Verificar se exercício existe
-            const exercicioExistente = await this.repository.getExercicioById(id);
+            const exercicioExistente = await this.repository.getByIdExercicio(id);
 
             if (!exercicioExistente) {
                 throw new Error('Exercício não encontrado');
@@ -120,6 +129,17 @@ class ExercicioService {
             // TODO: [AUTH] Implementar verificação de permissão por perfil:
             // - ADMIN: pode editar qualquer exercício (global ou pessoal)
             // - INSTRUTOR/ALUNO: só pode editar exercícios pessoais onde aluno_id === usuarioLogadoId
+
+            if (dadosValidados.musculos && dadosValidados.musculos.length > 0) {
+                const verificacaoMusculos = await this.repository.verificarMusculosExistem(
+                    dadosValidados.musculos.map((m) => m.musculo_id),
+                );
+                if (!verificacaoMusculos.validos) {
+                    throw new Error(
+                        `Músculo(s) não encontrado(s): ${verificacaoMusculos.inexistentes.join(', ')}`,
+                    );
+                }
+            }
 
             if (dadosValidados.nome && dadosValidados.nome !== exercicioExistente.nome) {
                 const duplicado = await this.repository.findByNome(
@@ -139,13 +159,57 @@ class ExercicioService {
 
             await this.repository.updateExercicio(id, dadosParaAtualizar, musculos);
 
-            return await this.repository.getExercicioById(id) as type_exercicio;
+            return await this.repository.getByIdExercicio(id) as type_exercicio;
         } catch (error) {
             if (error instanceof ZodError) {
+                // TODO: [LOGGER] Substituir por logger centralizado ao implementar auth
                 console.warn('[ExercicioService] [updateExercicio] Falha na validação Zod:', error.issues);
             } else {
+                // TODO: [LOGGER] Substituir por logger centralizado ao implementar auth
                 console.warn('[ExercicioService] [updateExercicio] Erro recebido, propagando...');
             }
+            throw error;
+        }
+    }
+
+    async deleteExercicio(idParam: string, force: boolean = false): Promise<type_exercicio> {
+        try {
+            const id = exercicioIdSchema.parse(idParam);
+
+            const exercicioExistente = await this.repository.getByIdExercicio(id);
+
+            if (!exercicioExistente) {
+                throw new Error('Exercício não encontrado');
+            }
+
+            // TODO: [AUTH] Implementar verificação de permissão por perfil:
+            // - ADMIN: pode deletar qualquer exercício (global ou pessoal)
+            // - INSTRUTOR/ALUNO: só pode deletar exercícios pessoais (aluno_id === usuarioLogadoId)
+            // - Exercícios globais (aluno_id === NULL) só podem ser deletados por ADMIN
+            // - Apenas ADMIN pode usar force=true para forçar soft delete de exercício em uso
+
+            const totalReferencias = await this.repository.contarReferenciasEmRotina(id);
+
+            if (totalReferencias > 0 && !force) {
+                throw new Error(
+                    `Exercício em uso em ${totalReferencias} rotina(s) de treino. Use force=true para forçar a exclusão.`,
+                );
+            }
+
+            if (totalReferencias > 0) {
+                // Soft delete: preserva integridade referencial com as rotinas que usam o exercício
+                // TODO: [AUTH] Apenas ADMIN pode forçar soft delete de exercício em uso
+                // TODO: [LOGGER] Substituir por logger centralizado ao implementar auth
+                console.warn(`[ExercicioService] [deleteExercicio] Soft delete forçado: exercício em uso em ${totalReferencias} rotina(s).`);
+                return await this.repository.softDeleteExercicio(id);
+            }
+
+            // Hard delete: sem referências, remoção física segura
+            await this.repository.hardDeleteExercicio(id);
+            return exercicioExistente;
+        } catch (error) {
+            // TODO: [LOGGER] Substituir por logger centralizado ao implementar auth
+            console.warn('[ExercicioService] [deleteExercicio] Erro recebido, propagando...');
             throw error;
         }
     }

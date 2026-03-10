@@ -1,23 +1,10 @@
 import { DataBase } from "../config/DbConnect";
-import { eq, and, or, isNull, ilike, sql, inArray, SQL } from "drizzle-orm";
-import { exercicio, exercicio_musculo, musculo } from "../config/db/schema";
+import { eq, and, or, isNull, sql, inArray } from "drizzle-orm";
+import { exercicio, exercicio_musculo, exercicio_aparelho, musculo, aluno, item_rotina } from "../config/db/schema";
 import { type_exercicio } from "../types/dbSchemas";
+import { FiltrosExercicio, ResultadoPaginadoExercicio } from "../types/filters";
 import { parseDatabaseError } from "../utils/errors/DatabaseError";
-
-// Tipos auxiliares
-interface FiltrosExercicio {
-    nome?: string;
-    grupo_muscular?: string;
-    aluno_id?: string;
-}
-
-interface ResultadoPaginado {
-    dados: type_exercicio[];
-    total: number;
-    page: number;
-    limite: number;
-    totalPages: number;
-}
+import ExercicioFilterBuilder from "./filters/ExercicioFilterBuilder"
 
 class ExercicioRepository {
     private db: typeof DataBase;
@@ -56,43 +43,18 @@ class ExercicioRepository {
         }
     }
 
-    async listarExercicios(
+    async getAllExercicios(
         filtros: FiltrosExercicio,
         page: number,
         limite: number,
-    ): Promise<ResultadoPaginado> {
+    ): Promise<ResultadoPaginadoExercicio> {
         try {
-            const condicoes: SQL[] = [isNull(exercicio.deletado_em)];
-
-            // Filtro por nome
-            if (filtros.nome) {
-                condicoes.push(ilike(exercicio.nome, `%${filtros.nome}%`));
-            }
-
-            // Filtro por aluno_id -> mostra globais + pessoais do aluno
-            if (filtros.aluno_id) {
-                condicoes.push(
-                    or(
-                        isNull(exercicio.aluno_id),
-                        eq(exercicio.aluno_id, filtros.aluno_id),
-                    )!,
-                );
-            } else {
-                condicoes.push(isNull(exercicio.aluno_id));
-            }
-
-            // Filtro por grupo_muscular via subquery (exercícios que possuem ao menos 1 músculo no grupo)
-            if (filtros.grupo_muscular) {
-                const idsExercicios = this.db
-                    .selectDistinct({ id: exercicio_musculo.exercicio_id })
-                    .from(exercicio_musculo)
-                    .innerJoin(musculo, eq(exercicio_musculo.musculo_id, musculo.id))
-                    .where(eq(musculo.grupo_muscular, filtros.grupo_muscular as any));
-
-                condicoes.push(inArray(exercicio.id, idsExercicios));
-            }
-
-            const where = and(...condicoes);
+            const where = new ExercicioFilterBuilder()
+                .comNome(filtros.nome)
+                .comAluno(filtros.aluno_id)
+                .comGrupoMuscular(filtros.grupo_muscular)
+                .comTipoAtivacao(filtros.tipo_ativacao)
+                .build();
             const offset = (page - 1) * limite;
 
             const [dados, countResult] = await Promise.all([
@@ -149,11 +111,11 @@ class ExercicioRepository {
                 totalPages: Math.ceil(total / limite),
             };
         } catch (error) {
-            throw parseDatabaseError(error, 'ExercicioRepository.listarExercicios');
+            throw parseDatabaseError(error, 'ExercicioRepository.getAllExercicios');
         }
     }
 
-    async getExercicioById(id: string): Promise<(type_exercicio & { musculos?: any[] }) | null> {
+    async getByIdExercicio(id: string): Promise<(type_exercicio & { musculos?: any[] }) | null> {
         try {
             const resposta = await this.db
                 .select()
@@ -176,7 +138,7 @@ class ExercicioRepository {
 
             return { ...resposta[0], musculos: vinculosMusculos };
         } catch (error) {
-            throw parseDatabaseError(error, 'ExercicioRepository.getExercicioById');
+            throw parseDatabaseError(error, 'ExercicioRepository.getByIdExercicio');
         }
     }
 
@@ -228,6 +190,20 @@ class ExercicioRepository {
         }
     }
 
+    async softDeleteExercicio(id: string): Promise<type_exercicio> {
+        try {
+            const [exercicioDeletado] = await this.db
+                .update(exercicio)
+                .set({ deletado_em: new Date() })
+                .where(and(eq(exercicio.id, id), isNull(exercicio.deletado_em)))
+                .returning();
+
+            return exercicioDeletado;
+        } catch (error) {
+            throw parseDatabaseError(error, 'ExercicioRepository.softDeleteExercicio');
+        }
+    }
+
     async findByNome(nome: string, alunoId?: string | null): Promise<type_exercicio | null> {
         try {
             const condicoes = alunoId
@@ -246,6 +222,75 @@ class ExercicioRepository {
             return resposta[0] || null;
         } catch (error) {
             throw parseDatabaseError(error, 'ExercicioRepository.findByNome');
+        }
+    }
+
+    async verificarMusculosExistem(
+        ids: string[],
+    ): Promise<{ validos: boolean; inexistentes: string[] }> {
+        try {
+            const encontrados = await this.db
+                .select({ id: musculo.id })
+                .from(musculo)
+                .where(inArray(musculo.id, ids));
+
+            const idsEncontrados = new Set(encontrados.map((m) => m.id));
+            const inexistentes = ids.filter((id) => !idsEncontrados.has(id));
+
+            return { validos: inexistentes.length === 0, inexistentes };
+        } catch (error) {
+            throw parseDatabaseError(error, 'ExercicioRepository.verificarMusculosExistem');
+        }
+    }
+
+    async verificarAlunoExiste(id: string): Promise<boolean> {
+        try {
+            const resultado = await this.db
+                .select({ id: aluno.id })
+                .from(aluno)
+                .where(eq(aluno.id, id))
+                .limit(1);
+
+            return resultado.length > 0;
+        } catch (error) {
+            throw parseDatabaseError(error, 'ExercicioRepository.verificarAlunoExiste');
+        }
+    }
+
+    async contarReferenciasEmRotina(id: string): Promise<number> {
+        try {
+            const resultado = await this.db
+                .select({ count: sql<number>`count(*)` })
+                .from(item_rotina)
+                .where(eq(item_rotina.exercicio_id, id));
+
+            return Number(resultado[0].count);
+        } catch (error) {
+            throw parseDatabaseError(error, 'ExercicioRepository.contarReferenciasEmRotina');
+        }
+    }
+
+    // TODO: [APARELHOS] Implementar vínculo de aparelhos (exercicio_aparelho) nos métodos
+    // createExercicio, updateExercicio e getByIdExercicio — retornar aparelhos junto ao exercício
+    // assim como já é feito com músculos.
+    async hardDeleteExercicio(id: string): Promise<void> {
+        try {
+            await this.db.transaction(async (tx) => {
+                // Remove vínculos N:M antes do registro principal (sem cascade no schema)
+                await tx
+                    .delete(exercicio_musculo)
+                    .where(eq(exercicio_musculo.exercicio_id, id));
+
+                await tx
+                    .delete(exercicio_aparelho)
+                    .where(eq(exercicio_aparelho.exercicio_id, id));
+
+                await tx
+                    .delete(exercicio)
+                    .where(eq(exercicio.id, id));
+            });
+        } catch (error) {
+            throw parseDatabaseError(error, 'ExercicioRepository.hardDeleteExercicio');
         }
     }
 }

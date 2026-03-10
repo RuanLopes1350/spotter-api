@@ -50,6 +50,9 @@ const exercicioQuerySchema = z.object({
     grupo_muscular: z
         .enum(['PEITO', 'COSTAS', 'PERNAS', 'BRAÇOS', 'OMBROS', 'ABDOMEN'])
         .optional(),
+    tipo_ativacao: z
+        .enum(['PRIMARIO', 'SECUNDARIO'], { message: "tipo_ativacao deve ser 'PRIMARIO' ou 'SECUNDARIO'" })
+        .optional(),
     aluno_id: z
         .string()
         .uuid({ message: 'aluno_id deve ser um UUID válido' })
