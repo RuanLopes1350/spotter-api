@@ -44,7 +44,7 @@ class AlunoRepository {
     }
   }
 
-  async findById(id: number): Promise<type_aluno | null> {
+  async findById(id: string): Promise<type_aluno | null> {
     try {
       const resultado = await this.db
         .select()

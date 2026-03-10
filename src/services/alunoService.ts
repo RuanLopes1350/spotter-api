@@ -18,7 +18,7 @@ class AlunoService {
 
     alunoIdSchema.parse(id);
     
-    const Aluno = await this.repository.findById(id);
+    const Aluno = await this.repository.findById(String(id));
 
     if (!Aluno) {
       throw new Error(`Aluno com ID ${id} não encontrado`);
@@ -59,7 +59,6 @@ class AlunoService {
       const AlunoSanitizado = {
         ...novoAluno,
         status_conta: novoAluno.status_conta ?? true,
-        academia_id: Number(novoAluno.academia_id),
       };
       console.log(
         "[AlunoService] [createAluno] Dados sanitizados:",
