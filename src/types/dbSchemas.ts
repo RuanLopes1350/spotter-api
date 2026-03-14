@@ -70,13 +70,6 @@ export type type_exercicio = {
     aluno_id?: string | null;
     deletado_em?: Date | null;
     created_at?: Date;
-    musculos?: {
-        exercicio_id?: string;
-        musculo_id: string;
-        tipo_ativacao: type_tipo_ativacao;
-        nome: string;
-        grupo_muscular: type_grupo_muscular;
-    }[];
 }
 
 export type type_tipo_ativacao = 'PRIMARIO' | 'SECUNDARIO';

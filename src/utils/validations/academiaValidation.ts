@@ -19,10 +19,14 @@ const academiaSchema = z.object({
         .min(1, { message: "A cidade do endereço é obrigatória" }),
     endereco_estado: z
         .string()
-        .min(1, { message: "O estado do endereço é obrigatório" })
-        .max(2, { message: "O estado do endereço deve ter no máximo 2 caracteres" }),
-})
+        .min(2, { message: "O estado do endereço é obrigatório" })
+        .max(2, { message: "O estado do endereço deve ter exatamente 2 caracteres" }),
+}).strict();
 
 const academiaUpdateSchema = academiaSchema.partial();
 
-export { academiaSchema, academiaUpdateSchema }
+const academiaIdSchema = z
+    .string()
+    .uuid('ID inválido, deve ser um UUID válido');
+
+export { academiaSchema, academiaUpdateSchema, academiaIdSchema }

@@ -1,99 +1,106 @@
 import { DataBase } from "../config/DbConnect";
-import { aluno, treinador } from "../config/db/schema";
-import { auth } from "../utils/auth";
+import { user, account, aluno, treinador } from "../config/db/schema";
+import crypto from "crypto";
+
+/**
+ * Seed de usuários compatível com BetterAuth.
+ * Cria registros na tabela 'user' (auth) e depois vincula a 'aluno'/'treinador' (perfil).
+ *
+ * Senhas: utiliza hash via crypto (scrypt) no mesmo formato do BetterAuth.
+ */
+async function hashPassword(password: string): Promise<string> {
+    const salt = crypto.randomBytes(16).toString("hex");
+    return new Promise((resolve, reject) => {
+        crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+            if (err) reject(err);
+            resolve(`${salt}:${derivedKey.toString("hex")}`);
+        });
+    });
+}
 
 export async function seedUsuarios(academiasIds: string[]): Promise<string[]> {
     if (academiasIds.length === 0) throw new Error("Nenhuma academia encontrada para vincular usuários.");
 
-    // Criando usuários de auth (alunos)
-    const authAluno1 = await auth.api.signUpEmail({
-        body: { name: "Carlos Eduardo Silva", email: "carlos.silva@gmail.com", password: "Aluno@2026!" },
-    });
+    const senhaHash = await hashPassword("Senha@123");
+    const now = new Date();
 
-    const authAluno2 = await auth.api.signUpEmail({
-        body: { name: "Ana Beatriz Oliveira", email: "ana.oliveira@hotmail.com", password: "Aluno@2026!" },
-    });
+    // 1. Criar users na tabela de auth do BetterAuth
+    const usersCriados = await DataBase.insert(user).values([
+        {
+            id: crypto.randomUUID(),
+            name: "José Lucas Brandão Montes",
+            email: "lucas.montes@ifro.edu.br",
+            emailVerified: true,
+            image: null,
+            createdAt: now,
+            updatedAt: now,
+        },
+        {
+            id: crypto.randomUUID(),
+            name: "Mariana Silva",
+            email: "mariana.silva@email.com",
+            emailVerified: true,
+            image: null,
+            createdAt: now,
+            updatedAt: now,
+        },
+        {
+            id: crypto.randomUUID(),
+            name: "Paulo Muzy",
+            email: "paulo.muzy@ironberg.com",
+            emailVerified: true,
+            image: null,
+            createdAt: now,
+            updatedAt: now,
+        },
+    ]).returning({ id: user.id });
 
-    const authAluno3 = await auth.api.signUpEmail({
-        body: { name: "Rafael Mendes Costa", email: "rafael.costa@gmail.com", password: "Aluno@2026!" },
-    });
+    // 2. Criar accounts com senha (provider: credential)
+    await DataBase.insert(account).values(
+        usersCriados.map((u) => ({
+            id: crypto.randomUUID(),
+            accountId: u.id,
+            providerId: "credential",
+            userId: u.id,
+            password: senhaHash,
+            createdAt: now,
+            updatedAt: now,
+        })),
+    );
 
-    const authAluno4 = await auth.api.signUpEmail({
-        body: { name: "Juliana Ferreira Lima", email: "juliana.lima@outlook.com", password: "Aluno@2026!" },
-    });
-
-    // Criando usuários de auth (treinadores)
-    const authTreinador1 = await auth.api.signUpEmail({
-        body: { name: "Marcos Antônio Rocha", email: "marcos.rocha@personalfit.com", password: "Treinador@2026!" },
-    });
-
-    const authTreinador2 = await auth.api.signUpEmail({
-        body: { name: "Fernanda Souza Almeida", email: "fernanda.almeida@personalfit.com", password: "Treinador@2026!" },
-    });
-
-    // Criando perfis de alunos
+    // 3. Criar perfis de aluno vinculados aos users
     const alunosCriados = await DataBase.insert(aluno).values([
         {
-            user_id: authAluno1.user.id,
-            nome: "Carlos Eduardo Silva",
-            data_nascimento: "1995-03-12",
-            sexo: "M",
+            user_id: usersCriados[0].id,
+            nome: "José Lucas Brandão Montes",
+            data_nascimento: "1998-05-15",
+            sexo: "M" as const,
             academia_id: academiasIds[0],
             status_conta: true,
         },
         {
-            user_id: authAluno2.user.id,
-            nome: "Ana Beatriz Oliveira",
-            data_nascimento: "2001-08-25",
-            sexo: "F",
-            academia_id: academiasIds[0],
-            status_conta: true,
-        },
-        {
-            user_id: authAluno3.user.id,
-            nome: "Rafael Mendes Costa",
-            data_nascimento: "1998-11-07",
-            sexo: "M",
+            user_id: usersCriados[1].id,
+            nome: "Mariana Silva",
+            data_nascimento: "2000-10-22",
+            sexo: "F" as const,
             academia_id: academiasIds[1],
-            status_conta: true,
-        },
-        {
-            user_id: authAluno4.user.id,
-            nome: "Juliana Ferreira Lima",
-            data_nascimento: "2000-06-18",
-            sexo: "F",
-            academia_id: academiasIds[2],
-            status_conta: true,
         },
     ]).returning({ id: aluno.id });
 
-    // Criando perfis de treinadores
+    // 4. Criar perfil de treinador
     await DataBase.insert(treinador).values([
         {
-            user_id: authTreinador1.user.id,
-            nome: "Marcos Antônio Rocha",
-            data_nascimento: "1985-01-20",
-            sexo: "M",
-            cref: "012345-G/RO",
+            user_id: usersCriados[2].id,
+            nome: "Paulo Muzy",
+            data_nascimento: "1979-07-16",
+            sexo: "M" as const,
+            cref: "123456-G/SP",
             turnos: ["MANHA", "TARDE"],
-            especializacao: "Hipertrofia e Força",
+            especializacao: "Hipertrofia e Emagrecimento",
             graduacao: "Educação Física - Bacharel",
-            academia_id: academiasIds[0],
-            status_conta: true,
-        },
-        {
-            user_id: authTreinador2.user.id,
-            nome: "Fernanda Souza Almeida",
-            data_nascimento: "1990-09-14",
-            sexo: "F",
-            cref: "067890-G/RO",
-            turnos: ["TARDE", "NOITE"],
-            especializacao: "Emagrecimento e Condicionamento",
-            graduacao: "Educação Física - Licenciatura",
             academia_id: academiasIds[1],
-            status_conta: true,
         },
     ]);
 
-    return alunosCriados.map(a => a.id);
+    return alunosCriados.map((a) => a.id);
 }
