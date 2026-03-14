@@ -27,7 +27,9 @@ export const openApiDocument = generator.generateDocument({
         version: "1.0.0",
         description: "API para controle de atividades físicas, academias, alunos e exercícios.",
     },
-    servers: [{ url: "/api", description: "Servidor local" }],
+    servers: [
+        { url: "/api", description: "Servidor atual (relativo)" },
+    ],
     tags: [
         { name: "Auth", description: "Autenticação e gerenciamento de sessão" },
         { name: "Academia", description: "CRUD de academias" },

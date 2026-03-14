@@ -29,9 +29,33 @@ app.use(express.json());
 
 // Swagger UI — documentação da API
 app.get("/api/docs/openapi.json", (req, res) => {
-  res.json(openApiDocument);
+  const host = req.get("host") || `localhost:${PORT}`;
+  const protocol = req.headers["x-forwarded-proto"] || "http";
+  const currentServer = `${protocol}://${host}/api`;
+
+  const servers: { url: string; description: string }[] = [];
+
+  // Adiciona o servidor atual (detectado pela requisição)
+  servers.push({ url: currentServer, description: "Servidor atual" });
+
+  // Adiciona servidores adicionais que não sejam o atual
+  const extras = [
+    { url: "http://localhost:1350/api", description: "Docker dev (porta 1350)" },
+    { url: "http://localhost:3000/api", description: "Local dev (porta 3000)" },
+  ];
+  for (const s of extras) {
+    if (s.url !== currentServer) servers.push(s);
+  }
+
+  res.json({ ...openApiDocument, servers });
 });
-app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
+app.use(
+  "/api/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(undefined, {
+    swaggerOptions: { url: "/api/docs/openapi.json" },
+  }),
+);
 
 // Rota Health Check
 app.get("/api", (req, res) => {
