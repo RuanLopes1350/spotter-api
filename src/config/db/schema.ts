@@ -178,22 +178,23 @@ export const exercicio_aparelho = pgTable('exercicio_aparelho', {
     primaryKey({ columns: [table.exercicio_id, table.aparelho_id] })
 ]);
 
-export const rotina_treino = pgTable('rotina_treino', {
+export const treino = pgTable('treino', {
     id: uuid('id').defaultRandom().primaryKey(),
     nome: varchar('nome', { length: 255 }).notNull(),
+    descricao: text('descricao'),
     data_criacao: timestamp('data_criacao').defaultNow().notNull(),
     usuario_id: uuid('usuario_id').notNull().references(() => aluno.id),
     treinador_id: uuid('treinador_id').references(() => treinador.id),
 });
 
-export const item_rotina = pgTable('item_rotina', {
+export const treino_exercicio = pgTable('treino_exercicio', {
     id: uuid('id').defaultRandom().primaryKey(),
     series: integer('series').notNull(),
     repeticoes: varchar('repeticoes', { length: 50 }).notNull(),
     carga_sugerida: decimal('carga_sugerida', { precision: 5, scale: 2 }),
     tempo_descanso_segundos: integer('tempo_descanso_segundos').notNull(),
     ordem_execucao: integer('ordem_execucao').notNull(),
-    rotina_id: uuid('rotina_id').notNull().references(() => rotina_treino.id, { onDelete: 'cascade' }),
+    treino_id: uuid('treino_id').notNull().references(() => treino.id, { onDelete: 'cascade' }),
     exercicio_id: uuid('exercicio_id').notNull().references(() => exercicio.id),
 });
 
@@ -217,7 +218,7 @@ export const alunoRelations = relations(aluno, ({ one, many }) => ({
     }),
     alunoAcademias: many(aluno_academia),
     avaliacoesFisicas: many(avaliacao_fisica),
-    rotinasTreino: many(rotina_treino),
+    treinos: many(treino),
     exerciciosCriados: many(exercicio),
 }));
 
@@ -252,7 +253,7 @@ export const treinadorRelations = relations(treinador, ({ one, many }) => ({
         references: [academia.id],
     }),
     treinadorAcademias: many(treinador_academia),
-    rotinasCriadas: many(rotina_treino),
+    treinosCriados: many(treino),
 }));
 
 // 4.1. Treinador <-> Academia
@@ -273,7 +274,7 @@ export const exercicioRelations = relations(exercicio, ({ one, many }) => ({
         fields: [exercicio.aluno_id],
         references: [aluno.id],
     }),
-    itensRotina: many(item_rotina),
+    treinosExercicios: many(treino_exercicio),
     exercicioMusculos: many(exercicio_musculo),
     exercicioAparelhos: many(exercicio_aparelho),
 }));
@@ -313,26 +314,26 @@ export const exercicioAparelhoRelations = relations(exercicio_aparelho, ({ one }
 }));
 
 // 10. Rotina de Treino
-export const rotinaTreinoRelations = relations(rotina_treino, ({ one, many }) => ({
+export const treinoRelations = relations(treino, ({ one, many }) => ({
     aluno: one(aluno, {
-        fields: [rotina_treino.usuario_id],
+        fields: [treino.usuario_id],
         references: [aluno.id],
     }),
     treinador: one(treinador, {
-        fields: [rotina_treino.treinador_id],
+        fields: [treino.treinador_id],
         references: [treinador.id],
     }),
-    itens: many(item_rotina),
+    exercicios: many(treino_exercicio),
 }));
 
-// 11. Item da Rotina
-export const itemRotinaRelations = relations(item_rotina, ({ one }) => ({
-    rotina: one(rotina_treino, {
-        fields: [item_rotina.rotina_id],
-        references: [rotina_treino.id],
+// 11. Item do Treino
+export const treinoExercicioRelations = relations(treino_exercicio, ({ one }) => ({
+    treino: one(treino, {
+        fields: [treino_exercicio.treino_id],
+        references: [treino.id],
     }),
     exercicio: one(exercicio, {
-        fields: [item_rotina.exercicio_id],
+        fields: [treino_exercicio.exercicio_id],
         references: [exercicio.id],
     }),
 }));

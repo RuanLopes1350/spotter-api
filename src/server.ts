@@ -12,6 +12,7 @@ import { openApiDocument } from "./docs/swagger";
 import academiaRoutes from './routes/academiaRoutes';
 import alunoRoutes from './routes/alunoRoutes';
 import exercicioRoutes from './routes/exercicioRoutes';
+import treinoRoutes from './routes/treinoRoutes';
 import authRoutes from "./routes/authRoutes";
 
 dotenv.config();
@@ -71,6 +72,7 @@ app.get("/", (req, res) => {
 app.use('/api', academiaRoutes);
 app.use('/api', alunoRoutes);
 app.use('/api', exercicioRoutes);
+app.use('/api', treinoRoutes);
 app.use('/api', authRoutes);
 
 //função para iniciar o servidor
