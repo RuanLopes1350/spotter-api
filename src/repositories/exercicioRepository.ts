@@ -1,6 +1,6 @@
 import { DataBase } from "../config/DbConnect";
 import { eq, and, isNull, inArray, sql } from "drizzle-orm";
-import { exercicio, exercicio_musculo, musculo, aluno, treinador, item_rotina } from "../config/db/schema";
+import { exercicio, exercicio_musculo, musculo, aluno, treinador, treino_exercicio } from "../config/db/schema";
 import { type_exercicio } from "../types/dbSchemas";
 import { ExercicioComMusculos, FiltrosExercicio, MusculoResumo, ResultadoPaginadoExercicio } from "../types/filters";
 import { parseDatabaseError } from "../utils/errors/DatabaseError";
@@ -229,12 +229,12 @@ class ExercicioRepository {
 
     /**
      * Hard delete em cascata — exclusivo para admin.
-     * Remove item_rotina, exercicio_musculo e exercicio em uma única transação.
+    * Remove treino_exercicio, exercicio_musculo e exercicio em uma única transação.
      */
     async hardDeleteCascade(id: string): Promise<void> {
         try {
             await this.db.transaction(async (tx) => {
-                await tx.delete(item_rotina).where(eq(item_rotina.exercicio_id, id));
+                await tx.delete(treino_exercicio).where(eq(treino_exercicio.exercicio_id, id));
                 await tx.delete(exercicio_musculo).where(eq(exercicio_musculo.exercicio_id, id));
                 await tx.delete(exercicio).where(eq(exercicio.id, id));
             });
@@ -338,8 +338,8 @@ class ExercicioRepository {
         try {
             const resultado = await this.db
                 .select({ count: sql<number>`count(*)` })
-                .from(item_rotina)
-                .where(eq(item_rotina.exercicio_id, exercicioId));
+                    .from(treino_exercicio)
+                    .where(eq(treino_exercicio.exercicio_id, exercicioId));
 
             return Number(resultado[0].count);
         } catch (error) {

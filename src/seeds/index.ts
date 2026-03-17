@@ -16,7 +16,7 @@ async function runSeeds() {
         console.log(chalk.whiteBright('Limpando o banco de dados...'));
         await DataBase.execute(sql`
             TRUNCATE TABLE 
-                item_rotina, rotina_treino, exercicio_aparelho, exercicio_musculo, 
+                treino_exercicio, treino, exercicio_aparelho, exercicio_musculo, 
                 exercicio, aparelho, musculo, treinador_academia, treinador, 
                 avaliacao_fisica, aluno_academia, aluno, academia,
                 session, account, verification, "user"

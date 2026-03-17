@@ -85,22 +85,23 @@ export type type_exercicio_aparelho = {
     aparelho_id: string;
 }
 
-export type type_rotina_treino = {
+export type type_treino = {
     id?: string;
     nome: string;
-    data_criacao: Date;
+    descricao?: string | null;
+    data_criacao?: Date;
     usuario_id: string;
     treinador_id: string | null;
 }
 
-export type type_item_rotina = {
+export type type_treino_exercicio = {
     id?: string;
     series: number;
     repeticoes: string;
     carga_sugerida: number;
     tempo_descanso_segundos: number;
     ordem_execucao: number;
-    rotina_id: string;
+    treino_id: string;
     exercicio_id: string;
 }
 
