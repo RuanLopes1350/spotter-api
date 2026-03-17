@@ -1,6 +1,6 @@
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { alunoSchema } from "../utils/validations/alunoValidation";
+import { alunoSchema, alunoUpdateSchema } from "../utils/validations/alunoValidation";
 
 export const alunoRegistry = new OpenAPIRegistry();
 
@@ -108,6 +108,43 @@ alunoRegistry.registerPath({
             },
         },
         400: { description: "Dados obrigatórios ausentes" },
+        422: { description: "Erro de validação" },
+    },
+});
+
+// PATCH /alunos/{id}
+alunoRegistry.registerPath({
+    method: "patch",
+    path: "/alunos/{id}",
+    summary: "Atualizar aluno",
+    description: "Atualiza parcialmente os dados de um aluno existente.",
+    tags: ["Aluno"],
+    request: {
+        params: idParam,
+        body: {
+            required: true,
+            content: {
+                "application/json": { schema: alunoUpdateSchema },
+            },
+        },
+    },
+    responses: {
+        200: {
+            description: "Aluno atualizado com sucesso",
+            content: {
+                "application/json": {
+                    schema: z.object({
+                        error: z.boolean().openapi({ example: false }),
+                        code: z.number().openapi({ example: 200 }),
+                        message: z.string().nullable().openapi({ example: "Aluno atualizado com sucesso" }),
+                        data: AlunoResponse,
+                        errors: z.array(z.any()),
+                    }),
+                },
+            },
+        },
+        400: { description: "Corpo da requisição é obrigatório" },
+        404: { description: "Aluno não encontrado" },
         422: { description: "Erro de validação" },
     },
 });

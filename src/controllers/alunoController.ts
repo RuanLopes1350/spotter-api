@@ -143,6 +143,46 @@ class AlunoController {
     }
   };
 
+  updateAluno = async (req: Request, res: Response) => {
+    console.log("[AlunoController] [updateAluno] Requisição recebida");
+    const id = this.getRequestIdParam(req);
+    const alunoEditadoBody = req.body;
+
+    if (!id) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCode.BAD_REQUEST.code,
+        null,
+        "id",
+        [],
+        "O id é obrigatório",
+      );
+    }
+
+    if (!alunoEditadoBody || Object.keys(alunoEditadoBody).length === 0) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCode.BAD_REQUEST.code,
+        null,
+        "",
+        [],
+        "Corpo da requisição é obrigatório",
+      );
+    }
+
+    try {
+      const alunoAtualizado = await this.service.updateAluno(id, alunoEditadoBody);
+      return CommonResponse.success(
+        res,
+        alunoAtualizado,
+        HttpStatusCode.OK.code,
+        "Aluno atualizado com sucesso",
+      );
+    } catch (error) {
+      return this.handleError(res, error, "updateAluno");
+    }
+  };
+
   private handleError(res: Response, error: unknown, context: string) {
     if (error instanceof ZodError) {
       console.warn(

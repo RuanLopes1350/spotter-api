@@ -127,6 +127,32 @@ class AlunoService {
 
     return alunoDeletado;
   }
+
+  async updateAluno(id: string, alunoEditado: Partial<type_aluno>): Promise<type_aluno> {
+    console.log(
+      `[AlunoService] [updateAluno] Atualizando aluno com ID: ${id}`,
+    );
+
+    alunoIdSchema.parse(id);
+
+    if (Object.keys(alunoEditado).length === 0) {
+      throw new Error("Corpo da requisição é obrigatório");
+    }
+
+    alunoUpdateSchema.parse(alunoEditado);
+
+    const alunoAtualizado = await this.repository.update(id, alunoEditado);
+
+    if (!alunoAtualizado) {
+      throw new Error(`Aluno com ID ${id} não encontrado`);
+    }
+
+    console.log(
+      "[AlunoService] [updateAluno] Aluno atualizado com sucesso",
+    );
+
+    return alunoAtualizado;
+  }
 }
 
 export default AlunoService;
